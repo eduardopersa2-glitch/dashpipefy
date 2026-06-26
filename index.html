@@ -3,97 +3,134 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sinistros Dashboard · Pipefy</title>
+  <title>Pipefy Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #0F1117; font-family: system-ui, sans-serif; color: #E8ECF4; min-height: 100vh; }
-    input, button, select { font-family: inherit; }
+    input, button { font-family: inherit; }
 
-    /* Setup */
-    #setup { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
-    .setup-card { background: #181C27; border: 1px solid #2A3047; border-radius: 16px; padding: 40px 36px; width: 100%; max-width: 460px; }
-    .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; }
-    .logo-icon { width: 36px; height: 36px; border-radius: 8px; background: #4F8EF7; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; font-size: 18px; }
-    .logo-title { font-weight: 700; font-size: 16px; color: #E8ECF4; }
-    .logo-sub { font-size: 12px; color: #6B7A99; }
-    .field { display: flex; flex-direction: column; gap: 6px; }
-    .field label { color: #9BA6BF; font-size: 12px; }
-    .field input { background: #1E2333; border: 1px solid #2A3047; border-radius: 8px; padding: 12px 14px; color: #E8ECF4; font-size: 14px; outline: none; font-family: monospace; }
-    .field .hint { color: #6B7A99; font-size: 11px; }
-    .btn-primary { background: #4F8EF7; color: #fff; border: none; border-radius: 8px; padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 4px; }
-    .btn-primary:disabled { background: #2A3047; cursor: not-allowed; }
-    .error-box { background: #3B1A1A; border: 1px solid #F75F5F; border-radius: 8px; padding: 10px 14px; color: #F75F5F; font-size: 13px; display: none; }
+    /* ── Setup ── */
+    #setup { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px; }
+    .setup-card { background:#181C27; border:1px solid #2A3047; border-radius:16px; padding:40px 36px; width:100%; max-width:480px; }
+    .logo { display:flex; align-items:center; gap:10px; margin-bottom:28px; }
+    .logo-icon { width:36px; height:36px; border-radius:8px; background:#4F8EF7; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:18px; }
+    .logo-title { font-weight:700; font-size:16px; }
+    .logo-sub { font-size:12px; color:#6B7A99; }
+    .field { display:flex; flex-direction:column; gap:6px; }
+    .field label { color:#9BA6BF; font-size:12px; }
+    .field input { background:#1E2333; border:1px solid #2A3047; border-radius:8px; padding:12px 14px; color:#E8ECF4; font-size:14px; outline:none; }
+    .field .hint { color:#6B7A99; font-size:11px; }
+    .pipe-row { display:flex; gap:8px; align-items:center; }
+    .pipe-row input { flex:1; background:#1E2333; border:1px solid #2A3047; border-radius:8px; padding:10px 12px; color:#E8ECF4; font-size:13px; outline:none; }
+    .pipe-row input::placeholder { color:#6B7A99; }
+    .btn-remove { background:transparent; border:1px solid #2A3047; color:#6B7A99; border-radius:6px; padding:6px 10px; cursor:pointer; font-size:14px; }
+    .btn-remove:hover { border-color:#F75F5F; color:#F75F5F; }
+    .btn-add { background:transparent; border:1px dashed #2A3047; color:#6B7A99; border-radius:8px; padding:10px; font-size:13px; cursor:pointer; width:100%; }
+    .btn-add:hover { border-color:#4F8EF7; color:#4F8EF7; }
+    .btn-primary { background:#4F8EF7; color:#fff; border:none; border-radius:8px; padding:14px; font-size:15px; font-weight:600; cursor:pointer; width:100%; }
+    .btn-primary:disabled { background:#2A3047; cursor:not-allowed; }
+    .error-box { background:#3B1A1A; border:1px solid #F75F5F; border-radius:8px; padding:10px 14px; color:#F75F5F; font-size:13px; display:none; }
+    .section-header { color:#6B7A99; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px; }
 
-    /* Dashboard */
-    #dashboard { display: none; }
-    .topbar { border-bottom: 1px solid #2A3047; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; background: #181C27; flex-wrap: wrap; gap: 10px; }
-    .topbar-left { display: flex; align-items: center; gap: 12px; }
-    .topbar-icon { width: 30px; height: 30px; border-radius: 6px; background: #4F8EF7; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; font-size: 14px; }
-    .topbar-name { font-weight: 700; font-size: 15px; }
-    .topbar-refresh { color: #6B7A99; font-size: 11px; }
-    .topbar-right { display: flex; gap: 10px; align-items: center; }
-    .btn-ghost { background: transparent; border: 1px solid #2A3047; color: #9BA6BF; border-radius: 7px; padding: 7px 14px; font-size: 13px; cursor: pointer; }
-    .btn-ghost:hover { border-color: #4F8EF7; color: #4F8EF7; }
+    /* ── App shell ── */
+    #app { display:none; height:100vh; overflow:hidden; flex-direction:row; }
 
-    /* Filter bar */
-    .filter-bar { background: #181C27; border-bottom: 1px solid #2A3047; padding: 12px 32px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .filter-label { color: #6B7A99; font-size: 12px; margin-right: 4px; }
-    .period-btn { background: transparent; border: 1px solid #2A3047; color: #9BA6BF; border-radius: 6px; padding: 6px 14px; font-size: 13px; cursor: pointer; transition: all 0.15s; }
-    .period-btn.active { background: #4F8EF7; border-color: #4F8EF7; color: #fff; font-weight: 600; }
-    .period-btn:hover:not(.active) { border-color: #4F8EF7; color: #4F8EF7; }
-    .date-input { background: #1E2333; border: 1px solid #2A3047; border-radius: 6px; padding: 6px 10px; color: #E8ECF4; font-size: 13px; outline: none; }
-    .filter-sep { color: #2A3047; font-size: 18px; }
-    .filter-count { color: #6B7A99; font-size: 12px; margin-left: auto; }
+    /* ── Sidebar ── */
+    .sidebar { width:240px; min-width:240px; background:#181C27; border-right:1px solid #2A3047; display:flex; flex-direction:column; height:100vh; }
+    .sidebar-header { padding:16px; border-bottom:1px solid #2A3047; display:flex; align-items:center; gap:8px; }
+    .sidebar-icon { width:28px; height:28px; border-radius:6px; background:#4F8EF7; display:flex; align-items:center; justify-content:center; font-weight:800; color:#fff; font-size:13px; flex-shrink:0; }
+    .sidebar-title { font-weight:700; font-size:13px; }
+    .sidebar-sub { font-size:10px; color:#6B7A99; }
+    .sidebar-section { padding:12px 16px 6px; color:#6B7A99; font-size:10px; text-transform:uppercase; letter-spacing:0.1em; }
+    .sidebar-item { display:flex; align-items:center; gap:10px; padding:10px 16px; cursor:pointer; border-left:2px solid transparent; transition:all 0.15s; }
+    .sidebar-item:hover { background:#1E2333; }
+    .sidebar-item.active { background:#1E2333; border-left-color:#4F8EF7; }
+    .sidebar-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .sidebar-name { font-size:13px; font-weight:500; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .sidebar-count { font-size:11px; color:#6B7A99; background:#2A3047; border-radius:10px; padding:1px 6px; flex-shrink:0; }
+    .sidebar-footer { margin-top:auto; padding:12px 16px; border-top:1px solid #2A3047; }
+    .btn-ghost-sm { background:transparent; border:1px solid #2A3047; color:#9BA6BF; border-radius:6px; padding:7px 10px; font-size:12px; cursor:pointer; width:100%; }
+    .btn-ghost-sm:hover { border-color:#4F8EF7; color:#4F8EF7; }
 
-    .content { padding: 24px 32px; max-width: 1200px; }
-    .section-title { color: #9BA6BF; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin: 28px 0 12px; border-bottom: 1px solid #2A3047; padding-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; }
-    .kpi { background: #1E2333; border: 1px solid #2A3047; border-radius: 12px; padding: 20px 24px; }
-    .kpi-label { color: #6B7A99; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
-    .kpi-value { font-size: 36px; font-weight: 700; line-height: 1.1; }
-    .kpi-sub { color: #9BA6BF; font-size: 12px; margin-top: 4px; }
-    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .chart-card { background: #1E2333; border: 1px solid #2A3047; border-radius: 12px; padding: 20px; }
-    .chart-label { color: #9BA6BF; font-size: 12px; margin-bottom: 14px; }
-    .dist-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th { text-align: left; padding: 12px 16px; color: #6B7A99; font-weight: 600; font-size: 11px; text-transform: uppercase; }
-    td { padding: 11px 16px; border-top: 1px solid #2A3047; }
-    .badge { background: #2A3047; border-radius: 4px; padding: 2px 8px; color: #9BA6BF; font-size: 11px; }
-    .tag-overdue { color: #F75F5F; font-weight: 600; }
-    .tag-ok { color: #3DD68C; }
-    .table-footer { color: #6B7A99; font-size: 12px; margin-top: 8px; }
+    /* ── Main ── */
+    .main { flex:1; overflow-y:auto; display:flex; flex-direction:column; }
+    .topbar { border-bottom:1px solid #2A3047; padding:14px 28px; display:flex; align-items:center; justify-content:space-between; background:#181C27; flex-shrink:0; flex-wrap:wrap; gap:8px; }
+    .topbar-left { display:flex; flex-direction:column; gap:2px; }
+    .topbar-name { font-weight:700; font-size:16px; }
+    .topbar-meta { color:#6B7A99; font-size:11px; }
+    .topbar-right { display:flex; gap:8px; align-items:center; }
+    .btn-ghost { background:transparent; border:1px solid #2A3047; color:#9BA6BF; border-radius:7px; padding:7px 14px; font-size:12px; cursor:pointer; }
+    .btn-ghost:hover { border-color:#4F8EF7; color:#4F8EF7; }
 
-    /* Phase detail modal */
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; padding: 24px; }
-    .modal-overlay.open { display: flex; }
-    .modal { background: #181C27; border: 1px solid #2A3047; border-radius: 16px; width: 100%; max-width: 780px; max-height: 85vh; display: flex; flex-direction: column; }
-    .modal-header { padding: 20px 24px; border-bottom: 1px solid #2A3047; display: flex; align-items: center; justify-content: space-between; }
-    .modal-title { font-weight: 700; font-size: 16px; }
-    .modal-phase { color: #4F8EF7; font-size: 13px; margin-top: 2px; }
-    .modal-close { background: transparent; border: none; color: #6B7A99; font-size: 22px; cursor: pointer; line-height: 1; }
-    .modal-body { overflow-y: auto; padding: 0; }
-    .modal-body table { font-size: 13px; }
-    .modal-body th { position: sticky; top: 0; background: #181C27; z-index: 1; }
-    .modal-footer { padding: 12px 24px; border-top: 1px solid #2A3047; color: #6B7A99; font-size: 12px; }
+    /* ── Filter bar ── */
+    .filter-bar { background:#181C27; border-bottom:1px solid #2A3047; padding:10px 28px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; flex-shrink:0; }
+    .filter-label { color:#6B7A99; font-size:12px; }
+    .period-btn { background:transparent; border:1px solid #2A3047; color:#9BA6BF; border-radius:6px; padding:5px 12px; font-size:12px; cursor:pointer; }
+    .period-btn.active { background:#4F8EF7; border-color:#4F8EF7; color:#fff; font-weight:600; }
+    .period-btn:hover:not(.active) { border-color:#4F8EF7; color:#4F8EF7; }
+    .date-input { background:#1E2333; border:1px solid #2A3047; border-radius:6px; padding:5px 10px; color:#E8ECF4; font-size:12px; outline:none; }
+    .filter-count { color:#6B7A99; font-size:12px; margin-left:auto; }
 
-    /* Phase cards clickable */
-    .phase-row { cursor: pointer; transition: background 0.1s; }
-    .phase-row:hover td { background: #232840; }
-    .phase-link { color: #4F8EF7; font-size: 11px; margin-left: 8px; }
+    /* ── Content ── */
+    .content { padding:20px 28px; }
+    .section-title { color:#9BA6BF; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.1em; margin:24px 0 12px; border-bottom:1px solid #2A3047; padding-bottom:8px; display:flex; align-items:center; justify-content:space-between; }
+    .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
+    .kpi { background:#1E2333; border:1px solid #2A3047; border-radius:12px; padding:18px 20px; }
+    .kpi-label { color:#6B7A99; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px; }
+    .kpi-value { font-size:32px; font-weight:700; line-height:1.1; }
+    .kpi-sub { color:#9BA6BF; font-size:11px; margin-top:4px; }
+    .charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .chart-card { background:#1E2333; border:1px solid #2A3047; border-radius:12px; padding:18px; }
+    .chart-label { color:#9BA6BF; font-size:12px; margin-bottom:12px; }
+    .dist-grid { display:grid; grid-template-columns:1fr 2fr; gap:14px; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th { text-align:left; padding:11px 14px; color:#6B7A99; font-weight:600; font-size:11px; text-transform:uppercase; }
+    td { padding:10px 14px; border-top:1px solid #2A3047; }
+    .badge { background:#2A3047; border-radius:4px; padding:2px 8px; color:#9BA6BF; font-size:11px; }
+    .tag-overdue { color:#F75F5F; font-weight:600; }
+    .tag-ok { color:#3DD68C; }
+    .phase-row { cursor:pointer; }
+    .phase-row:hover td { background:#232840; }
+    .phase-link { color:#4F8EF7; font-size:11px; margin-left:6px; }
+
+    /* ── Modal ── */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:100; align-items:center; justify-content:center; padding:24px; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:#181C27; border:1px solid #2A3047; border-radius:16px; width:100%; max-width:800px; max-height:85vh; display:flex; flex-direction:column; }
+    .modal-header { padding:18px 22px; border-bottom:1px solid #2A3047; display:flex; align-items:center; justify-content:space-between; }
+    .modal-title { font-weight:700; font-size:15px; }
+    .modal-sub { color:#4F8EF7; font-size:12px; margin-top:2px; }
+    .modal-close { background:transparent; border:none; color:#6B7A99; font-size:20px; cursor:pointer; }
+    .modal-body { overflow-y:auto; }
+    .modal-body th { position:sticky; top:0; background:#181C27; z-index:1; }
+    .modal-footer { padding:10px 22px; border-top:1px solid #2A3047; color:#6B7A99; font-size:12px; }
+
+    /* ── Scroll area ── */
+    .main-scroll { flex:1; overflow-y:auto; }
+
+    /* ── Loading/empty ── */
+    .state-center { display:flex; align-items:center; justify-content:center; flex:1; min-height:300px; }
+    .state-msg { text-align:center; color:#6B7A99; }
+    .spinner { font-size:32px; animation:spin 1s linear infinite; display:inline-block; margin-bottom:10px; }
+    @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+    /* Sidebar color dots */
+    .c0{background:#4F8EF7} .c1{background:#3DD68C} .c2{background:#F7C94F}
+    .c3{background:#F75F5F} .c4{background:#A78BFA} .c5{background:#F9A8D4}
+    .c6{background:#38BDF8} .c7{background:#FB923C}
   </style>
 </head>
 <body>
 
-<!-- Setup Screen -->
+<!-- ── Setup ── -->
 <div id="setup">
   <div class="setup-card">
     <div class="logo">
-      <div class="logo-icon">S</div>
+      <div class="logo-icon">P</div>
       <div>
-        <div class="logo-title">Sinistros Dashboard</div>
-        <div class="logo-sub">Conectado ao Pipefy</div>
+        <div class="logo-title">Pipefy Dashboard</div>
+        <div class="logo-sub">Multi-fluxo em tempo real</div>
       </div>
     </div>
     <div style="display:flex;flex-direction:column;gap:16px">
@@ -102,463 +139,574 @@
         <input type="password" id="token" placeholder="eyJhbGciOi..." />
         <span class="hint">Gere em app.pipefy.com/tokens</span>
       </div>
-      <div class="field">
-        <label>ID do Pipe de Sinistros</label>
-        <input type="text" id="pipeId" placeholder="302345678" />
-        <span class="hint">URL do pipe: pipefy.com/pipes/<strong>ID</strong></span>
+      <div>
+        <div class="section-header">Fluxos (pipes)</div>
+        <div id="pipesList" style="display:flex;flex-direction:column;gap:8px"></div>
+        <button class="btn-add" style="margin-top:8px" onclick="addPipeRow()">+ Adicionar fluxo</button>
       </div>
       <div class="error-box" id="setupError"></div>
-      <button class="btn-primary" id="connectBtn" onclick="connect()">Conectar e abrir dashboard →</button>
+      <button class="btn-primary" id="connectBtn" onclick="connect()">Entrar no dashboard →</button>
     </div>
   </div>
 </div>
 
-<!-- Dashboard -->
-<div id="dashboard">
-  <!-- Topbar -->
-  <div class="topbar">
-    <div class="topbar-left">
-      <div class="topbar-icon">S</div>
+<!-- ── App ── -->
+<div id="app">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-icon">P</div>
       <div>
-        <div class="topbar-name" id="pipeName">—</div>
-        <div class="topbar-refresh" id="refreshLabel">Carregando…</div>
+        <div class="sidebar-title">Pipefy Dashboard</div>
+        <div class="sidebar-sub">Multi-fluxo</div>
       </div>
     </div>
-    <div class="topbar-right">
-      <button class="btn-ghost" onclick="loadData()">↻ Atualizar</button>
-      <button class="btn-ghost" onclick="disconnect()">Desconectar</button>
+    <div class="sidebar-section">Fluxos</div>
+    <div id="sidebarItems"></div>
+    <div class="sidebar-footer">
+      <button class="btn-ghost-sm" onclick="disconnect()">⎋ Desconectar</button>
     </div>
   </div>
 
-  <!-- Filter bar -->
-  <div class="filter-bar">
-    <span class="filter-label">Período:</span>
-    <button class="period-btn" onclick="setPeriod('day')" id="btn-day">Hoje</button>
-    <button class="period-btn" onclick="setPeriod('week')" id="btn-week">Semana</button>
-    <button class="period-btn active" onclick="setPeriod('month')" id="btn-month">Mês</button>
-    <button class="period-btn" onclick="setPeriod('year')" id="btn-year">Ano</button>
-    <button class="period-btn" onclick="setPeriod('all')" id="btn-all">Todos</button>
-    <span class="filter-sep">|</span>
-    <span class="filter-label">Personalizado:</span>
-    <input type="date" class="date-input" id="dateFrom" onchange="setCustomPeriod()" />
-    <span style="color:#6B7A99;font-size:12px">até</span>
-    <input type="date" class="date-input" id="dateTo" onchange="setCustomPeriod()" />
-    <span class="filter-count" id="filterCount"></span>
-  </div>
-
-  <div class="content">
-    <!-- KPIs -->
-    <div class="section-title">Visão Geral</div>
-    <div class="kpi-grid">
-      <div class="kpi"><div class="kpi-label">Total</div><div class="kpi-value" id="kpiTotal" style="color:#4F8EF7">—</div><div class="kpi-sub">no período</div></div>
-      <div class="kpi"><div class="kpi-label">Em Aberto</div><div class="kpi-value" id="kpiOpen" style="color:#F7C94F">—</div><div class="kpi-sub">não finalizados</div></div>
-      <div class="kpi"><div class="kpi-label">Concluídos</div><div class="kpi-value" id="kpiClosed" style="color:#3DD68C">—</div><div class="kpi-sub">última fase</div></div>
-      <div class="kpi"><div class="kpi-label">Vencidos</div><div class="kpi-value" id="kpiOverdue" style="color:#F75F5F">—</div><div class="kpi-sub">prazo expirado</div></div>
-      <div class="kpi"><div class="kpi-label">Tempo Médio</div><div class="kpi-value" id="kpiAvg" style="color:#A78BFA">—</div><div class="kpi-sub">dias por sinistro</div></div>
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-name" id="mainTitle">—</div>
+        <div class="topbar-meta" id="mainMeta">—</div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-ghost" onclick="reloadCurrent()">↻ Atualizar</button>
+      </div>
     </div>
 
-    <!-- Charts -->
-    <div class="section-title">Volume por Fase & Tendência</div>
-    <div class="charts-grid">
-      <div class="chart-card"><div class="chart-label">Cards por fase <span style="color:#4F8EF7;font-size:11px">(clique para detalhar)</span></div><canvas id="chartPhase" height="200"></canvas></div>
-      <div class="chart-card"><div class="chart-label" id="trendLabel">Abertura no período</div><canvas id="chartTrend" height="200"></canvas></div>
+    <div class="filter-bar">
+      <span class="filter-label">Período:</span>
+      <button class="period-btn" onclick="setPeriod('day')" id="btn-day">Hoje</button>
+      <button class="period-btn" onclick="setPeriod('week')" id="btn-week">Semana</button>
+      <button class="period-btn active" onclick="setPeriod('month')" id="btn-month">Mês</button>
+      <button class="period-btn" onclick="setPeriod('year')" id="btn-year">Ano</button>
+      <button class="period-btn" onclick="setPeriod('all')" id="btn-all">Todos</button>
+      <span style="color:#2A3047;font-size:16px">|</span>
+      <input type="date" class="date-input" id="dateFrom" onchange="setCustomPeriod()" />
+      <span style="color:#6B7A99;font-size:12px">até</span>
+      <input type="date" class="date-input" id="dateTo" onchange="setCustomPeriod()" />
+      <span class="filter-count" id="filterCount"></span>
     </div>
 
-    <div class="section-title">Distribuição</div>
-    <div class="dist-grid">
-      <div class="chart-card"><div class="chart-label">Status geral</div><canvas id="chartStatus" height="200"></canvas></div>
-      <div class="chart-card"><div class="chart-label">Por tipo / categoria</div><canvas id="chartType" height="200"></canvas></div>
-    </div>
+    <!-- Static scrollable area — only data sections inside are replaced -->
+    <div class="main-scroll">
+      <div class="content">
+        <!-- KPIs -->
+        <div class="section-title">Visão Geral</div>
+        <div class="kpi-grid" id="kpiGrid">
+          <div class="kpi"><div class="kpi-label">Total</div><div class="kpi-value" id="kpiTotal" style="color:#4F8EF7">—</div><div class="kpi-sub">no período</div></div>
+          <div class="kpi"><div class="kpi-label">Em Aberto</div><div class="kpi-value" id="kpiOpen" style="color:#F7C94F">—</div><div class="kpi-sub">não finalizados</div></div>
+          <div class="kpi"><div class="kpi-label">Concluídos</div><div class="kpi-value" id="kpiClosed" style="color:#3DD68C">—</div><div class="kpi-sub">última fase</div></div>
+          <div class="kpi"><div class="kpi-label">Vencidos</div><div class="kpi-value" id="kpiOverdue" style="color:#F75F5F">—</div><div class="kpi-sub">prazo expirado</div></div>
+          <div class="kpi"><div class="kpi-label">Tempo Médio</div><div class="kpi-value" id="kpiAvg" style="color:#A78BFA">—</div><div class="kpi-sub">dias por card</div></div>
+        </div>
 
-    <!-- Phase detail table -->
-    <div class="section-title">
-      Detalhe por Fase
-      <span style="color:#6B7A99;font-size:11px;font-weight:400">Clique em uma fase para ver os sinistros</span>
-    </div>
-    <div style="background:#1E2333;border:1px solid #2A3047;border-radius:12px;overflow:hidden">
-      <table>
-        <thead><tr><th>Fase</th><th>Total</th><th>Vencidos</th><th>Tempo médio</th><th>% do total</th></tr></thead>
-        <tbody id="phaseTableBody"></tbody>
-      </table>
-    </div>
+        <!-- Charts row 1 -->
+        <div class="section-title">Volume por Fase & Tendência</div>
+        <div class="charts-grid">
+          <div class="chart-card">
+            <div class="chart-label">Cards por fase <span id="phaseClickHint" style="font-size:11px">(clique para detalhar)</span></div>
+            <canvas id="chartPhase" height="200"></canvas>
+          </div>
+          <div class="chart-card">
+            <div class="chart-label" id="trendLabel">Abertura no período</div>
+            <canvas id="chartTrend" height="200"></canvas>
+          </div>
+        </div>
 
-    <!-- Recent cards -->
-    <div class="section-title">Sinistros Recentes</div>
-    <div style="background:#1E2333;border:1px solid #2A3047;border-radius:12px;overflow:hidden">
-      <table>
-        <thead><tr><th>Título</th><th>Fase</th><th>Abertura</th><th>Prazo</th><th>Status</th></tr></thead>
-        <tbody id="tableBody"></tbody>
-      </table>
+        <!-- Charts row 2 -->
+        <div class="section-title">Distribuição</div>
+        <div class="dist-grid">
+          <div class="chart-card"><div class="chart-label">Status geral</div><canvas id="chartStatus" height="200"></canvas></div>
+          <div class="chart-card"><div class="chart-label">Por tipo / categoria</div><canvas id="chartType" height="200"></canvas></div>
+        </div>
+
+        <!-- Phase detail -->
+        <div class="section-title">
+          Detalhe por Fase
+          <span style="color:#6B7A99;font-size:11px;font-weight:400">Clique em uma fase para ver os cards</span>
+        </div>
+        <div style="background:#1E2333;border:1px solid #2A3047;border-radius:12px;overflow:hidden">
+          <table>
+            <thead><tr><th>Fase</th><th>Cards</th><th>Vencidos</th><th>Tempo médio</th><th>% do total</th></tr></thead>
+            <tbody id="phaseTableBody"></tbody>
+          </table>
+        </div>
+
+        <!-- Recent -->
+        <div class="section-title">Registros Recentes</div>
+        <div style="background:#1E2333;border:1px solid #2A3047;border-radius:12px;overflow:hidden">
+          <table>
+            <thead><tr><th>Título</th><th>Fase</th><th>Abertura</th><th>Prazo</th><th>Status</th></tr></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+        <div style="color:#6B7A99;font-size:12px;margin-top:8px" id="tableFooter"></div>
+      </div>
     </div>
-    <div class="table-footer" id="tableFooter"></div>
   </div>
 </div>
 
-<!-- Phase Detail Modal -->
+<!-- ── Modal ── -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
   <div class="modal">
     <div class="modal-header">
       <div>
-        <div class="modal-title" id="modalTitle">Sinistros na fase</div>
-        <div class="modal-phase" id="modalPhase"></div>
+        <div class="modal-title" id="modalTitle"></div>
+        <div class="modal-sub" id="modalSub"></div>
       </div>
       <button class="modal-close" onclick="closeModalDirect()">✕</button>
     </div>
     <div class="modal-body">
-      <table>
-        <thead><tr><th>Título</th><th>Abertura</th><th>Última atualização</th><th>Prazo</th><th>Status</th></tr></thead>
-        <tbody id="modalBody"></tbody>
-      </table>
+      <table><thead><tr><th>Título</th><th>Abertura</th><th>Atualização</th><th>Prazo</th><th>Status</th></tr></thead>
+      <tbody id="modalBody"></tbody></table>
     </div>
     <div class="modal-footer" id="modalFooter"></div>
   </div>
 </div>
 
 <script>
-  let SESSION = null;
-  let ALL_CARDS = [];
-  let charts = {};
-  let refreshInterval = null;
-  let currentPeriod = 'month';
-  let customFrom = null, customTo = null;
+// ── State ──────────────────────────────────────────────────────────────────
+let SESSION = null;           // { token, pipes:[{id,name,color}], pipeData:{} }
+let CURRENT_PIPE = null;      // pipe id
+let CURRENT_CARDS = [];
+let charts = {};
+let currentPeriod = 'month';
+let customFrom = null, customTo = null;
+let refreshInterval = null;
 
-  // ── Auth ──────────────────────────────────────────────────────────────────
-  async function gql(query) {
-    const res = await fetch('/api/pipefy', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SESSION.token },
-      body: JSON.stringify({ query })
-    });
-    const json = await res.json();
-    if (json.errors) throw new Error(json.errors.map(e => e.message).join(', '));
-    return json.data;
-  }
+const PIPE_COLORS = ['#4F8EF7','#3DD68C','#F7C94F','#F75F5F','#A78BFA','#F9A8D4','#38BDF8','#FB923C'];
 
-  async function connect() {
-    const token = document.getElementById('token').value.trim();
-    const pipeId = document.getElementById('pipeId').value.trim();
-    const errEl = document.getElementById('setupError');
-    const btn = document.getElementById('connectBtn');
-    errEl.style.display = 'none';
-    if (!token || !pipeId) { showError('Preencha o token e o ID do pipe.'); return; }
-    btn.disabled = true; btn.textContent = 'Conectando…';
-    SESSION = { token, pipeId };
-    try {
-      const data = await gql(`{ pipe(id: ${pipeId}) { name phases { id name cards_count } } }`);
-      if (!data.pipe) throw new Error('Pipe não encontrado.');
-      SESSION.pipeInfo = data.pipe;
-      document.getElementById('setup').style.display = 'none';
-      document.getElementById('dashboard').style.display = 'block';
-      document.getElementById('pipeName').textContent = data.pipe.name;
-      await loadData();
-      refreshInterval = setInterval(loadData, 60000);
-    } catch(e) {
-      showError(e.message || 'Erro ao conectar.');
-      SESSION = null;
-    }
-    btn.disabled = false; btn.textContent = 'Conectar e abrir dashboard →';
-  }
+// ── Setup UI ────────────────────────────────────────────────────────────────
+function addPipeRow(id='', name='') {
+  const list = document.getElementById('pipesList');
+  const div = document.createElement('div');
+  div.className = 'pipe-row';
+  div.innerHTML = `
+    <input type="text" placeholder="Nome do fluxo (ex: Sinistros)" value="${name}" class="pipe-name" />
+    <input type="text" placeholder="ID do pipe" value="${id}" class="pipe-id" style="max-width:130px" />
+    <button class="btn-remove" onclick="this.parentElement.remove()">✕</button>
+  `;
+  list.appendChild(div);
+}
 
-  function showError(msg) {
-    const el = document.getElementById('setupError');
-    el.textContent = msg; el.style.display = 'block';
-  }
+// Init with one row
+addPipeRow();
 
-  function disconnect() {
-    clearInterval(refreshInterval);
-    SESSION = null; ALL_CARDS = [];
-    Object.values(charts).forEach(c => c.destroy()); charts = {};
-    document.getElementById('dashboard').style.display = 'none';
-    document.getElementById('setup').style.display = 'flex';
-  }
-
-  // ── Data loading ──────────────────────────────────────────────────────────
-  async function loadData() {
-    document.getElementById('refreshLabel').textContent = 'Atualizando…';
-    try {
-      let all = [], cursor = null, hasNext = true;
-      while (hasNext) {
-        const q = `{ cards(pipe_id: ${SESSION.pipeId}, first: 50${cursor ? `, after: "${cursor}"` : ''}) {
-          pageInfo { hasNextPage endCursor }
-          edges { node { id title createdAt updated_at due_date current_phase { name } fields { field { label } value } } }
-        }}`;
-        const data = await gql(q);
-        all = [...all, ...data.cards.edges.map(e => e.node)];
-        hasNext = data.cards.pageInfo.hasNextPage;
-        cursor = data.cards.pageInfo.endCursor;
-      }
-      ALL_CARDS = all;
-      applyFilter();
-      document.getElementById('refreshLabel').textContent = 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR') + ' · auto-refresh 60s';
-    } catch(e) {
-      document.getElementById('refreshLabel').textContent = 'Erro ao atualizar';
-      console.error(e);
-    }
-  }
-
-  // ── Period filter ─────────────────────────────────────────────────────────
-  function setPeriod(p) {
-    currentPeriod = p; customFrom = null; customTo = null;
-    document.getElementById('dateFrom').value = '';
-    document.getElementById('dateTo').value = '';
-    ['day','week','month','year','all'].forEach(id => {
-      document.getElementById('btn-'+id).classList.toggle('active', id === p);
-    });
-    applyFilter();
-  }
-
-  function setCustomPeriod() {
-    const from = document.getElementById('dateFrom').value;
-    const to = document.getElementById('dateTo').value;
-    if (!from && !to) return;
-    customFrom = from ? new Date(from + 'T00:00:00') : null;
-    customTo = to ? new Date(to + 'T23:59:59') : null;
-    currentPeriod = 'custom';
-    ['day','week','month','year','all'].forEach(id => document.getElementById('btn-'+id).classList.remove('active'));
-    applyFilter();
-  }
-
-  function getDateRange() {
-    const now = new Date();
-    if (customFrom || customTo) return { from: customFrom, to: customTo || now };
-    if (currentPeriod === 'all') return { from: null, to: null };
-    const from = new Date(now);
-    if (currentPeriod === 'day') from.setHours(0,0,0,0);
-    else if (currentPeriod === 'week') { from.setDate(now.getDate() - now.getDay()); from.setHours(0,0,0,0); }
-    else if (currentPeriod === 'month') { from.setDate(1); from.setHours(0,0,0,0); }
-    else if (currentPeriod === 'year') { from.setMonth(0,1); from.setHours(0,0,0,0); }
-    return { from, to: now };
-  }
-
-  function filterCards(cards) {
-    const { from, to } = getDateRange();
-    if (!from && !to) return cards;
-    return cards.filter(c => {
-      const d = new Date(c.createdAt);
-      return (!from || d >= from) && (!to || d <= to);
-    });
-  }
-
-  function applyFilter() {
-    const filtered = filterCards(ALL_CARDS);
-    const { from, to } = getDateRange();
-    const label = from
-      ? `${from.toLocaleDateString('pt-BR')} – ${to.toLocaleDateString('pt-BR')}`
-      : 'Todos os sinistros';
-    document.getElementById('filterCount').textContent = `${filtered.length} sinistros · ${label}`;
-    renderDashboard(filtered);
-  }
-
-  // ── Render ────────────────────────────────────────────────────────────────
-  function renderDashboard(cards) {
-    const phases = SESSION.pipeInfo.phases;
-    const now = new Date();
-    const lastPhase = phases[phases.length - 1]?.name || '';
-    const overdue = cards.filter(c => c.due_date && new Date(c.due_date) < now).length;
-    const closed = cards.filter(c => c.current_phase?.name === lastPhase).length;
-    const open = cards.length - closed;
-    const avg = cards.length > 0
-      ? (cards.reduce((s,c) => s + Math.abs((new Date(c.updated_at) - new Date(c.createdAt)) / 86400000), 0) / cards.length).toFixed(1)
-      : 0;
-
-    document.getElementById('kpiTotal').textContent = cards.length;
-    document.getElementById('kpiOpen').textContent = open;
-    document.getElementById('kpiClosed').textContent = closed;
-    document.getElementById('kpiOverdue').textContent = overdue;
-    document.getElementById('kpiAvg').textContent = avg + 'd';
-
-    // Phase chart (uses all cards for real counts)
-    const phaseLabels = phases.map(p => p.name);
-    const phaseCounts = phases.map(p => {
-      return cards.filter(c => c.current_phase?.name === p.name).length;
-    });
-    makeBar('chartPhase', phaseLabels, phaseCounts, '#4F8EF7', true);
-
-    // Trend
-    const trendData = buildTrend(cards);
-    document.getElementById('trendLabel').textContent = 'Abertura — ' + trendData.label;
-    makeLine('chartTrend', trendData.labels, trendData.values, '#3DD68C');
-
-    // Status
-    const statusData = [
-      { label: 'Abertos', value: open, color: '#F7C94F' },
-      { label: 'Concluídos', value: closed, color: '#3DD68C' },
-      { label: 'Vencidos', value: overdue, color: '#F75F5F' },
-    ].filter(x => x.value > 0);
-    makePie('chartStatus', statusData.map(x=>x.label), statusData.map(x=>x.value), statusData.map(x=>x.color));
-
-    // Type
-    const typeMap = {};
-    cards.forEach(c => {
-      const f = (c.fields||[]).find(f => /tipo|categoria|class|type/i.test(f.field?.label||''));
-      const val = f?.value || 'Não classificado';
-      typeMap[val] = (typeMap[val]||0) + 1;
-    });
-    const typeEntries = Object.entries(typeMap).sort(([,a],[,b])=>b-a).slice(0,6);
-    makeBarH('chartType', typeEntries.map(([k])=>k), typeEntries.map(([,v])=>v));
-
-    // Phase detail table
-    const phaseBody = document.getElementById('phaseTableBody');
-    phaseBody.innerHTML = '';
-    phases.forEach(p => {
-      const phaseCards = cards.filter(c => c.current_phase?.name === p.name);
-      const phaseOverdue = phaseCards.filter(c => c.due_date && new Date(c.due_date) < now).length;
-      const phaseAvg = phaseCards.length > 0
-        ? (phaseCards.reduce((s,c) => s + Math.abs((new Date(c.updated_at) - new Date(c.createdAt)) / 86400000), 0) / phaseCards.length).toFixed(1)
-        : '—';
-      const pct = cards.length > 0 ? ((phaseCards.length / cards.length) * 100).toFixed(1) : '0';
-      const tr = document.createElement('tr');
-      tr.className = 'phase-row';
-      tr.onclick = () => openPhaseModal(p.name, phaseCards);
-      tr.innerHTML = `
-        <td style="color:#E8ECF4;font-weight:500">${p.name} <span class="phase-link">ver detalhes →</span></td>
-        <td><span style="color:#4F8EF7;font-weight:600">${phaseCards.length}</span></td>
-        <td>${phaseOverdue > 0 ? `<span style="color:#F75F5F;font-weight:600">${phaseOverdue}</span>` : '<span style="color:#3DD68C">0</span>'}</td>
-        <td style="color:#9BA6BF">${phaseAvg}${phaseAvg !== '—' ? 'd' : ''}</td>
-        <td>
-          <div style="display:flex;align-items:center;gap:8px">
-            <div style="flex:1;background:#2A3047;border-radius:3px;height:6px">
-              <div style="width:${pct}%;background:#4F8EF7;height:6px;border-radius:3px"></div>
-            </div>
-            <span style="color:#9BA6BF;font-size:11px;min-width:32px">${pct}%</span>
-          </div>
-        </td>
-      `;
-      phaseBody.appendChild(tr);
-    });
-
-    // Recent table
-    const tbody = document.getElementById('tableBody');
-    tbody.innerHTML = '';
-    cards.slice(0,10).forEach(c => {
-      const isOverdue = c.due_date && new Date(c.due_date) < now;
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td style="color:#E8ECF4">${c.title||'—'}</td>
-        <td><span class="badge">${c.current_phase?.name||'—'}</span></td>
-        <td style="color:#9BA6BF">${c.createdAt ? new Date(c.createdAt).toLocaleDateString('pt-BR') : '—'}</td>
-        <td style="color:${isOverdue?'#F75F5F':'#9BA6BF'}">${c.due_date ? new Date(c.due_date).toLocaleDateString('pt-BR') : '—'}</td>
-        <td>${isOverdue ? '<span class="tag-overdue">● Vencido</span>' : '<span class="tag-ok">✓ OK</span>'}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-    document.getElementById('tableFooter').textContent = `Exibindo 10 de ${cards.length} sinistros`;
-  }
-
-  function buildTrend(cards) {
-    const { from, to } = getDateRange();
-    const diffDays = from ? Math.ceil((( to || new Date()) - from) / 86400000) : 365;
-    const groups = {};
-    cards.forEach(c => {
-      const d = new Date(c.createdAt);
-      let key;
-      if (diffDays <= 1) key = d.getHours() + 'h';
-      else if (diffDays <= 31) key = d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' });
-      else if (diffDays <= 365) key = d.toLocaleDateString('pt-BR', { month:'short', year:'2-digit' });
-      else key = d.getFullYear().toString();
-      groups[key] = (groups[key]||0) + 1;
-    });
-    const entries = Object.entries(groups).slice(-16);
-    const labelMap = { day:'por hora', week:'por dia', month:'por dia', year:'por mês', all:'por ano', custom:'por período' };
-    return { labels: entries.map(([k])=>k), values: entries.map(([,v])=>v), label: labelMap[currentPeriod]||'' };
-  }
-
-  // ── Phase Modal ───────────────────────────────────────────────────────────
-  function openPhaseModal(phaseName, cards) {
-    document.getElementById('modalTitle').textContent = `${cards.length} sinistro${cards.length !== 1 ? 's' : ''} na fase`;
-    document.getElementById('modalPhase').textContent = phaseName;
-    const now = new Date();
-    const tbody = document.getElementById('modalBody');
-    tbody.innerHTML = '';
-    cards.forEach(c => {
-      const isOverdue = c.due_date && new Date(c.due_date) < now;
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td style="color:#E8ECF4">${c.title||'—'}</td>
-        <td style="color:#9BA6BF">${c.createdAt ? new Date(c.createdAt).toLocaleDateString('pt-BR') : '—'}</td>
-        <td style="color:#9BA6BF">${c.updated_at ? new Date(c.updated_at).toLocaleDateString('pt-BR') : '—'}</td>
-        <td style="color:${isOverdue?'#F75F5F':'#9BA6BF'}">${c.due_date ? new Date(c.due_date).toLocaleDateString('pt-BR') : '—'}</td>
-        <td>${isOverdue ? '<span class="tag-overdue">● Vencido</span>' : '<span class="tag-ok">✓ OK</span>'}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-    document.getElementById('modalFooter').textContent = `${cards.length} sinistros nesta fase`;
-    document.getElementById('modalOverlay').classList.add('open');
-  }
-
-  function closeModal(e) { if (e.target === document.getElementById('modalOverlay')) closeModalDirect(); }
-  function closeModalDirect() { document.getElementById('modalOverlay').classList.remove('open'); }
-
-  // ── Charts ────────────────────────────────────────────────────────────────
-  const COLORS = ['#4F8EF7','#3DD68C','#F7C94F','#F75F5F','#A78BFA','#F9A8D4'];
-  const gridColor = '#2A3047', tickColor = '#6B7A99';
-
-  function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
-
-  function makeBar(id, labels, data, color, clickable) {
-    destroyChart(id);
-    const cfg = {
-      type: 'bar',
-      data: { labels, datasets: [{ data, backgroundColor: color, borderRadius: 4, label: 'Sinistros' }] },
-      options: {
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { grid: { display: false }, ticks: { color: tickColor, font: { size: 11 } } },
-          y: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 11 } } }
-        }
-      }
-    };
-    if (clickable) {
-      cfg.options.onClick = (e, els) => {
-        if (!els.length) return;
-        const idx = els[0].index;
-        const phaseName = SESSION.pipeInfo.phases[idx]?.name;
-        if (!phaseName) return;
-        const phaseCards = filterCards(ALL_CARDS).filter(c => c.current_phase?.name === phaseName);
-        openPhaseModal(phaseName, phaseCards);
-      };
-      cfg.options.onHover = (e, els) => { e.native.target.style.cursor = els.length ? 'pointer' : 'default'; };
-    }
-    charts[id] = new Chart(document.getElementById(id), cfg);
-  }
-
-  function makeLine(id, labels, data, color) {
-    destroyChart(id);
-    charts[id] = new Chart(document.getElementById(id), {
-      type: 'line',
-      data: { labels, datasets: [{ data, borderColor: color, backgroundColor: color+'33', tension: 0.3, pointBackgroundColor: color, label: 'Sinistros', fill: true }] },
-      options: { plugins: { legend: { display: false } }, scales: {
-        x: { grid: { display: false }, ticks: { color: tickColor, font: { size: 11 } } },
-        y: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 11 } } }
-      }}
-    });
-  }
-
-  function makePie(id, labels, data, colors) {
-    destroyChart(id);
-    charts[id] = new Chart(document.getElementById(id), {
-      type: 'doughnut',
-      data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0 }] },
-      options: { plugins: { legend: { labels: { color: tickColor, font: { size: 12 }, boxWidth: 10 } } }, cutout: '55%' }
-    });
-  }
-
-  function makeBarH(id, labels, data) {
-    destroyChart(id);
-    charts[id] = new Chart(document.getElementById(id), {
-      type: 'bar',
-      data: { labels, datasets: [{ data, backgroundColor: COLORS, borderRadius: 4, label: 'Sinistros' }] },
-      options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: {
-        x: { grid: { color: gridColor }, ticks: { color: tickColor, font: { size: 11 } } },
-        y: { grid: { display: false }, ticks: { color: tickColor, font: { size: 11 } } }
-      }}
-    });
-  }
-
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeModalDirect();
-    if (e.key === 'Enter' && !SESSION) connect();
+async function gqlRaw(token, query) {
+  const res = await fetch('/api/pipefy', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+    body:JSON.stringify({query})
   });
+  const json = await res.json();
+  if (json.errors) throw new Error(json.errors.map(e=>e.message).join(', '));
+  return json.data;
+}
+
+async function connect() {
+  const token = document.getElementById('token').value.trim();
+  const rows = document.querySelectorAll('#pipesList .pipe-row');
+  const pipes = [];
+  rows.forEach((r,i) => {
+    const name = r.querySelector('.pipe-name').value.trim();
+    const id = r.querySelector('.pipe-id').value.trim();
+    if (id) pipes.push({ id, name: name || 'Fluxo '+(i+1), color: PIPE_COLORS[i % PIPE_COLORS.length], colorClass: 'c'+i });
+  });
+  if (!token) { showSetupError('Informe o token.'); return; }
+  if (!pipes.length) { showSetupError('Adicione pelo menos um fluxo.'); return; }
+
+  const btn = document.getElementById('connectBtn');
+  btn.disabled = true; btn.textContent = 'Conectando…';
+  document.getElementById('setupError').style.display = 'none';
+
+  try {
+    // Validate all pipes
+    const pipeData = {};
+    for (const p of pipes) {
+      const data = await gqlRaw(token, `{ pipe(id: ${p.id}) { name phases { id name cards_count } } }`);
+      if (!data.pipe) throw new Error(`Pipe "${p.name}" (ID ${p.id}) não encontrado.`);
+      pipeData[p.id] = { info: data.pipe, cards: [] };
+      if (!p.name || p.name.startsWith('Fluxo ')) p.name = data.pipe.name;
+    }
+    SESSION = { token, pipes, pipeData };
+    document.getElementById('setup').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    buildSidebar();
+    switchPipe(pipes[0].id);
+    refreshInterval = setInterval(reloadCurrent, 90000);
+  } catch(e) {
+    showSetupError(e.message);
+  }
+  btn.disabled = false; btn.textContent = 'Entrar no dashboard →';
+}
+
+function showSetupError(msg) {
+  const el = document.getElementById('setupError');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+function disconnect() {
+  clearInterval(refreshInterval);
+  SESSION = null; CURRENT_PIPE = null; CURRENT_CARDS = [];
+  Object.values(charts).forEach(c=>c.destroy()); charts = {};
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('setup').style.display = 'flex';
+}
+
+// ── Sidebar ─────────────────────────────────────────────────────────────────
+function buildSidebar() {
+  const container = document.getElementById('sidebarItems');
+  container.innerHTML = '';
+  SESSION.pipes.forEach(p => {
+    const item = document.createElement('div');
+    item.className = 'sidebar-item' + (p.id === CURRENT_PIPE ? ' active' : '');
+    item.id = 'sidebar-'+p.id;
+    item.onclick = () => switchPipe(p.id);
+    item.innerHTML = `
+      <div class="sidebar-dot ${p.colorClass}"></div>
+      <span class="sidebar-name">${p.name}</span>
+      <span class="sidebar-count" id="scount-${p.id}">—</span>
+    `;
+    container.appendChild(item);
+  });
+}
+
+function updateSidebarCount(pipeId, count) {
+  const el = document.getElementById('scount-'+pipeId);
+  if (el) el.textContent = count;
+}
+
+// ── Pipe switching ───────────────────────────────────────────────────────────
+async function switchPipe(pipeId) {
+  CURRENT_PIPE = pipeId;
+  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+  const sideEl = document.getElementById('sidebar-'+pipeId);
+  if (sideEl) sideEl.classList.add('active');
+
+  const pipe = SESSION.pipes.find(p => p.id === pipeId);
+  document.getElementById('mainTitle').textContent = pipe?.name || '—';
+
+  const cached = SESSION.pipeData[pipeId]?.cards;
+  if (cached && cached.length > 0) {
+    CURRENT_CARDS = cached;
+    applyFilter();
+    document.getElementById('mainMeta').textContent = 'Cache · atualizando…';
+  } else {
+    showLoading();
+  }
+  await loadPipeCards(pipeId);
+}
+
+async function reloadCurrent() {
+  if (CURRENT_PIPE) await loadPipeCards(CURRENT_PIPE);
+}
+
+function showLoading() {
+  ['kpiTotal','kpiOpen','kpiClosed','kpiOverdue','kpiAvg'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = '—';
+  });
+  document.getElementById('phaseTableBody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:#6B7A99;padding:20px"><span class="spinner" style="font-size:20px">⟳</span> Carregando…</td></tr>';
+  document.getElementById('tableBody').innerHTML = '';
+  document.getElementById('tableFooter').textContent = '';
+  document.getElementById('filterCount').textContent = '';
+  ['chartPhase','chartTrend','chartStatus','chartType'].forEach(id => destroyChart(id));
+}
+
+async function loadPipeCards(pipeId) {
+  try {
+    let all = [], cursor = null, hasNext = true;
+    while (hasNext) {
+      const q = `{ cards(pipe_id: ${pipeId}, first:50${cursor?`, after:"${cursor}"`:''}) {
+        pageInfo { hasNextPage endCursor }
+        edges { node { id title createdAt updated_at due_date current_phase { name } fields { field { label } value } } }
+      }}`;
+      const data = await gqlRaw(SESSION.token, q);
+      all = [...all, ...data.cards.edges.map(e=>e.node)];
+      hasNext = data.cards.pageInfo.hasNextPage;
+      cursor = data.cards.pageInfo.endCursor;
+    }
+
+    // Refresh pipe info too
+    const info = await gqlRaw(SESSION.token, `{ pipe(id:${pipeId}) { name phases { id name cards_count } } }`);
+    SESSION.pipeData[pipeId] = { info: info.pipe, cards: all };
+    updateSidebarCount(pipeId, all.length);
+
+    if (pipeId === CURRENT_PIPE) {
+      CURRENT_CARDS = all;
+      applyFilter();
+      document.getElementById('mainMeta').textContent = 'Atualizado às ' + new Date().toLocaleTimeString('pt-BR') + ' · auto-refresh 90s';
+    }
+  } catch(e) {
+    if (pipeId === CURRENT_PIPE)
+      document.getElementById('mainMeta').textContent = 'Erro ao atualizar: ' + e.message;
+  }
+}
+
+// ── Period filter ────────────────────────────────────────────────────────────
+function setPeriod(p) {
+  currentPeriod = p; customFrom = null; customTo = null;
+  document.getElementById('dateFrom').value = '';
+  document.getElementById('dateTo').value = '';
+  ['day','week','month','year','all'].forEach(id => {
+    document.getElementById('btn-'+id).classList.toggle('active', id === p);
+  });
+  applyFilter();
+}
+
+function setCustomPeriod() {
+  const from = document.getElementById('dateFrom').value;
+  const to = document.getElementById('dateTo').value;
+  if (!from && !to) return;
+  customFrom = from ? new Date(from+'T00:00:00') : null;
+  customTo   = to   ? new Date(to  +'T23:59:59') : null;
+  currentPeriod = 'custom';
+  ['day','week','month','year','all'].forEach(id => document.getElementById('btn-'+id).classList.remove('active'));
+  applyFilter();
+}
+
+function getDateRange() {
+  const now = new Date();
+  if (customFrom || customTo) return { from: customFrom, to: customTo || now };
+  if (currentPeriod === 'all') return { from: null, to: null };
+  const from = new Date(now);
+  if      (currentPeriod==='day')   { from.setHours(0,0,0,0); }
+  else if (currentPeriod==='week')  { from.setDate(now.getDate()-now.getDay()); from.setHours(0,0,0,0); }
+  else if (currentPeriod==='month') { from.setDate(1); from.setHours(0,0,0,0); }
+  else if (currentPeriod==='year')  { from.setMonth(0,1); from.setHours(0,0,0,0); }
+  return { from, to: now };
+}
+
+function filterCards(cards) {
+  const { from, to } = getDateRange();
+  if (!from && !to) return cards;
+  return cards.filter(c => {
+    const d = new Date(c.createdAt);
+    return (!from || d >= from) && (!to || d <= to);
+  });
+}
+
+function applyFilter() {
+  const filtered = filterCards(CURRENT_CARDS);
+  const { from, to } = getDateRange();
+  const rangeLabel = from
+    ? from.toLocaleDateString('pt-BR') + ' – ' + (to||new Date()).toLocaleDateString('pt-BR')
+    : 'Todos os registros';
+  document.getElementById('filterCount').textContent = filtered.length + ' registros · ' + rangeLabel;
+  renderDashboard(filtered);
+}
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function renderDashboard(cards) {
+  const pipeId = CURRENT_PIPE;
+  const pipeData = SESSION.pipeData[pipeId];
+  if (!pipeData) return;
+  const phases = pipeData.info.phases;
+  const pipe = SESSION.pipes.find(p => p.id === pipeId);
+  const accentColor = pipe?.color || '#4F8EF7';
+  const now = new Date();
+  const lastPhase = phases[phases.length-1]?.name || '';
+  const overdue = cards.filter(c => c.due_date && new Date(c.due_date) < now).length;
+  const closed = cards.filter(c => c.current_phase?.name === lastPhase).length;
+  const open = cards.length - closed;
+  const avg = cards.length > 0
+    ? (cards.reduce((s,c) => s + Math.abs((new Date(c.updated_at)-new Date(c.createdAt))/86400000), 0) / cards.length).toFixed(1)
+    : 0;
+
+  // Update KPIs in place
+  document.getElementById('kpiTotal').textContent = cards.length;
+  document.getElementById('kpiTotal').style.color = accentColor;
+  document.getElementById('kpiOpen').textContent = open;
+  document.getElementById('kpiClosed').textContent = closed;
+  document.getElementById('kpiOverdue').textContent = overdue;
+  document.getElementById('kpiAvg').textContent = avg + 'd';
+  const hint = document.getElementById('phaseClickHint');
+  if (hint) hint.style.color = accentColor;
+
+  // Charts
+  const phaseCounts = phases.map(p => cards.filter(c => c.current_phase?.name === p.name).length);
+  makeBar('chartPhase', phases.map(p=>p.name), phaseCounts, accentColor, true, phases, cards);
+
+  const trendData = buildTrend(cards);
+  document.getElementById('trendLabel').textContent = 'Abertura — ' + trendData.label;
+  makeLine('chartTrend', trendData.labels, trendData.values, '#3DD68C');
+
+  const statusData = [
+    {label:'Abertos',value:open,color:'#F7C94F'},
+    {label:'Concluídos',value:closed,color:'#3DD68C'},
+    {label:'Vencidos',value:overdue,color:'#F75F5F'},
+  ].filter(x=>x.value>0);
+  makePie('chartStatus', statusData.map(x=>x.label), statusData.map(x=>x.value), statusData.map(x=>x.color));
+
+  const typeMap = {};
+  cards.forEach(c => {
+    const f = (c.fields||[]).find(f => /tipo|categoria|class|type/i.test(f.field?.label||''));
+    const val = f?.value || 'Não classificado';
+    typeMap[val] = (typeMap[val]||0) + 1;
+  });
+  const typeEntries = Object.entries(typeMap).sort(([,a],[,b])=>b-a).slice(0,6);
+  makeBarH('chartType', typeEntries.map(([k])=>k), typeEntries.map(([,v])=>v));
+
+  // Phase table
+  const phaseBody = document.getElementById('phaseTableBody');
+  phaseBody.innerHTML = '';
+  phases.forEach(p => {
+    const pc = cards.filter(c => c.current_phase?.name === p.name);
+    const pod = pc.filter(c => c.due_date && new Date(c.due_date) < now).length;
+    const pavg = pc.length > 0 ? (pc.reduce((s,c)=>s+Math.abs((new Date(c.updated_at)-new Date(c.createdAt))/86400000),0)/pc.length).toFixed(1) : '—';
+    const pct = cards.length > 0 ? ((pc.length/cards.length)*100).toFixed(1) : '0';
+    const tr = document.createElement('tr');
+    tr.className = 'phase-row';
+    tr.onclick = () => openPhaseModal(p.name, pc);
+    tr.innerHTML = `
+      <td style="color:#E8ECF4;font-weight:500">${p.name}<span class="phase-link">ver →</span></td>
+      <td><span style="color:${accentColor};font-weight:600">${pc.length}</span></td>
+      <td>${pod>0?`<span style="color:#F75F5F;font-weight:600">${pod}</span>`:'<span style="color:#3DD68C">0</span>'}</td>
+      <td style="color:#9BA6BF">${pavg}${pavg!=='—'?'d':''}</td>
+      <td><div style="display:flex;align-items:center;gap:8px">
+        <div style="flex:1;background:#2A3047;border-radius:3px;height:6px">
+          <div style="width:${pct}%;background:${accentColor};height:6px;border-radius:3px"></div>
+        </div>
+        <span style="color:#9BA6BF;font-size:11px;min-width:32px">${pct}%</span>
+      </div></td>
+    `;
+    phaseBody.appendChild(tr);
+  });
+
+  // Recent table
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+  cards.slice(0,10).forEach(c => {
+    const isOD = c.due_date && new Date(c.due_date) < now;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="color:#E8ECF4">${c.title||'—'}</td>
+      <td><span class="badge">${c.current_phase?.name||'—'}</span></td>
+      <td style="color:#9BA6BF">${c.createdAt?new Date(c.createdAt).toLocaleDateString('pt-BR'):'—'}</td>
+      <td style="color:${isOD?'#F75F5F':'#9BA6BF'}">${c.due_date?new Date(c.due_date).toLocaleDateString('pt-BR'):'—'}</td>
+      <td>${isOD?'<span class="tag-overdue">● Vencido</span>':'<span class="tag-ok">✓ OK</span>'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('tableFooter').textContent = `Exibindo 10 de ${cards.length} registros`;
+}
+
+function buildTrend(cards) {
+  const { from, to } = getDateRange();
+  const diffDays = from ? Math.ceil(((to||new Date())-from)/86400000) : 365;
+  const groups = {};
+  cards.forEach(c => {
+    const d = new Date(c.createdAt);
+    let key;
+    if      (diffDays<=1)   key = d.getHours()+'h';
+    else if (diffDays<=31)  key = d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+    else if (diffDays<=365) key = d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'});
+    else                    key = d.getFullYear().toString();
+    groups[key] = (groups[key]||0) + 1;
+  });
+  const entries = Object.entries(groups).slice(-16);
+  const lm = {day:'por hora',week:'por dia',month:'por dia',year:'por mês',all:'por ano',custom:'personalizado'};
+  return { labels:entries.map(([k])=>k), values:entries.map(([,v])=>v), label:lm[currentPeriod]||'' };
+}
+
+// ── Modal ────────────────────────────────────────────────────────────────────
+function openPhaseModal(phaseName, cards) {
+  document.getElementById('modalTitle').textContent = phaseName;
+  document.getElementById('modalSub').textContent = cards.length + ' registro' + (cards.length!==1?'s':'') + ' nesta fase';
+  const now = new Date();
+  const tbody = document.getElementById('modalBody');
+  tbody.innerHTML = '';
+  cards.forEach(c => {
+    const isOD = c.due_date && new Date(c.due_date) < now;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="color:#E8ECF4">${c.title||'—'}</td>
+      <td style="color:#9BA6BF">${c.createdAt?new Date(c.createdAt).toLocaleDateString('pt-BR'):'—'}</td>
+      <td style="color:#9BA6BF">${c.updated_at?new Date(c.updated_at).toLocaleDateString('pt-BR'):'—'}</td>
+      <td style="color:${isOD?'#F75F5F':'#9BA6BF'}">${c.due_date?new Date(c.due_date).toLocaleDateString('pt-BR'):'—'}</td>
+      <td>${isOD?'<span class="tag-overdue">● Vencido</span>':'<span class="tag-ok">✓ OK</span>'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('modalFooter').textContent = cards.length + ' registros na fase "' + phaseName + '"';
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal(e) { if (e.target===document.getElementById('modalOverlay')) closeModalDirect(); }
+function closeModalDirect() { document.getElementById('modalOverlay').classList.remove('open'); }
+
+// ── Charts ───────────────────────────────────────────────────────────────────
+const COLORS=['#4F8EF7','#3DD68C','#F7C94F','#F75F5F','#A78BFA','#F9A8D4','#38BDF8','#FB923C'];
+const gc='#2A3047', tc='#6B7A99';
+
+function destroyChart(id) { if(charts[id]){charts[id].destroy();delete charts[id];} }
+
+function makeBar(id, labels, data, color, clickable, phases, allCards) {
+  destroyChart(id);
+  const cfg = {
+    type:'bar',
+    data:{labels,datasets:[{data,backgroundColor:color,borderRadius:4,label:'Cards'}]},
+    options:{plugins:{legend:{display:false}},scales:{
+      x:{grid:{display:false},ticks:{color:tc,font:{size:11}}},
+      y:{grid:{color:gc},ticks:{color:tc,font:{size:11}}}
+    }}
+  };
+  if (clickable && phases && allCards) {
+    cfg.options.onClick = (e,els) => {
+      if (!els.length) return;
+      const phaseName = phases[els[0].index]?.name;
+      if (!phaseName) return;
+      openPhaseModal(phaseName, filterCards(allCards).filter(c=>c.current_phase?.name===phaseName));
+    };
+    cfg.options.onHover = (e,els) => { e.native.target.style.cursor=els.length?'pointer':'default'; };
+  }
+  charts[id] = new Chart(document.getElementById(id), cfg);
+}
+
+function makeLine(id, labels, data, color) {
+  destroyChart(id);
+  charts[id] = new Chart(document.getElementById(id), {
+    type:'line',
+    data:{labels,datasets:[{data,borderColor:color,backgroundColor:color+'33',tension:0.3,pointBackgroundColor:color,label:'Cards',fill:true}]},
+    options:{plugins:{legend:{display:false}},scales:{
+      x:{grid:{display:false},ticks:{color:tc,font:{size:11}}},
+      y:{grid:{color:gc},ticks:{color:tc,font:{size:11}}}
+    }}
+  });
+}
+
+function makePie(id, labels, data, colors) {
+  destroyChart(id);
+  charts[id] = new Chart(document.getElementById(id), {
+    type:'doughnut',
+    data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:0}]},
+    options:{plugins:{legend:{labels:{color:tc,font:{size:12},boxWidth:10}}},cutout:'55%'}
+  });
+}
+
+function makeBarH(id, labels, data) {
+  destroyChart(id);
+  charts[id] = new Chart(document.getElementById(id), {
+    type:'bar',
+    data:{labels,datasets:[{data,backgroundColor:COLORS,borderRadius:4,label:'Cards'}]},
+    options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{
+      x:{grid:{color:gc},ticks:{color:tc,font:{size:11}}},
+      y:{grid:{display:false},ticks:{color:tc,font:{size:11}}}
+    }}
+  });
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key==='Escape') closeModalDirect();
+  if (e.key==='Enter' && !SESSION) connect();
+});
 </script>
 </body>
 </html>
