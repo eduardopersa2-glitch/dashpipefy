@@ -703,28 +703,6 @@ function renderCardsTable(cards, now, accentColor) {
   });
   document.getElementById('tableFooter').textContent = `Exibindo ${Math.min(20,filtered.length)} de ${filtered.length} registros${currentMasterFilter?' · filtrado por '+currentMasterFilter:''}`;
 }
-    const pc = cards.filter(c => c.current_phase?.name === p.name);
-    const pod = pc.filter(c => c.due_date && new Date(c.due_date) < now).length;
-    const pavg = pc.length > 0 ? (pc.reduce((s,c)=>s+Math.abs((new Date(c.updated_at)-new Date(c.createdAt))/86400000),0)/pc.length).toFixed(1) : '—';
-    const pct = cards.length > 0 ? ((pc.length/cards.length)*100).toFixed(1) : '0';
-    const tr = document.createElement('tr');
-    tr.className = 'phase-row';
-    tr.onclick = () => openPhaseModal(p.name, pc);
-    tr.innerHTML = `
-      <td style="color:#E8ECF4;font-weight:500">${p.name}<span class="phase-link">ver →</span></td>
-      <td><span style="color:${accentColor};font-weight:600">${pc.length}</span></td>
-      <td>${pod>0?`<span style="color:#F75F5F;font-weight:600">${pod}</span>`:'<span style="color:#3DD68C">0</span>'}</td>
-      <td style="color:#9BA6BF">${pavg}${pavg!=='—'?'d':''}</td>
-      <td><div style="display:flex;align-items:center;gap:8px">
-        <div style="flex:1;background:#2A3047;border-radius:3px;height:6px">
-          <div style="width:${pct}%;background:${accentColor};height:6px;border-radius:3px"></div>
-        </div>
-        <span style="color:#9BA6BF;font-size:11px;min-width:32px">${pct}%</span>
-      </div></td>
-    `;
-    phaseBody.appendChild(tr);
-  });
-}
 
 function buildTrend(cards) {
   const { from, to } = getDateRange();
