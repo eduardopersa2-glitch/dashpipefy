@@ -142,10 +142,10 @@
       <div>
         <div class="section-header">Fluxos (pipes)</div>
         <div id="pipesList" style="display:flex;flex-direction:column;gap:8px"></div>
-        <button class="btn-add" style="margin-top:8px" onclick="addPipeRow()">+ Adicionar fluxo</button>
+        <button class="btn-add" style="margin-top:8px" id="btnAddPipe">+ Adicionar fluxo</button>
       </div>
       <div class="error-box" id="setupError"></div>
-      <button class="btn-primary" id="connectBtn" onclick="connect()">Entrar no dashboard →</button>
+      <button class="btn-primary" id="connectBtn">Entrar no dashboard →</button>
     </div>
   </div>
 </div>
@@ -310,6 +310,10 @@ function addPipeRow(id='', name='') {
 
 // Init with one row
 addPipeRow();
+
+// Bind buttons after DOM is ready
+document.getElementById('btnAddPipe').addEventListener('click', addPipeRow);
+document.getElementById('connectBtn').addEventListener('click', connect);
 
 async function gqlRaw(token, query) {
   const res = await fetch('/api/pipefy', {
