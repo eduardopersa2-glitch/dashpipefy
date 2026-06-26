@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sinistros Dashboard · Pipefy</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0F1117; font-family: system-ui, sans-serif; color: #E8ECF4; }
+    ::-webkit-scrollbar { width: 6px; } 
+    ::-webkit-scrollbar-track { background: #181C27; }
+    ::-webkit-scrollbar-thumb { background: #2A3047; border-radius: 3px; }
+    input { font-family: inherit; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useCallback } = React;
+    const { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+            PieChart, Pie, Cell, LineChart, Line, CartesianGrid, Legend } = Recharts;
+
+    const T = {
+      bg: "#0F1117", surface: "#181C27", card: "#1E2333", border: "#2A3047",
+      accent: "#4F8EF7", success: "#3DD68C", warn: "#F7C94F", danger: "#F75F5F",
+      muted: "#6B7A99", text: "#E8ECF4", subtext: "#9BA6BF",
+    };
+    const COLORS = [T.accent, T.success, T.warn, T.danger, "#A78BFA", "#F9A8D4"];
+
+    // Usa o proxy /api/pipefy quando disponível (Vercel), senão direto
+    async function gqlFetch(token, query) {
+      const endpoint = "/api/pipefy";
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ query }),
+      });
+      const json = await res.json();
+      if (json.errors) throw new Error(json.errors.map(e => e.message).join(", "));
+      return json.data;
+    }
+
+    async function fetchAllCards(token, pipeId) {
+      let all = [], cursor = null, hasNext = true;
+      while (hasNext) {
+        const q = `{ cards(pipe_id: ${pipeId}, first: 50${cursor ? `, after: "${cursor}"` : ""}) {
+          pageInfo { hasNextPage endCursor }
+          edges { node {
+            id title createdAt updated_at due_date
+            current_phase { id name }
+            fields { field { id label } value }
+          }}
+        }}`;
+        const data = await gqlFetch(token, q);
+        const { edges, pageInfo } = data.cards;
+        all = [...all, ...edges.map(e => e.node)];
+        hasNext = pageInfo.hasNextPage;
+        cursor = pageInfo.endCursor;
+      }
+      return all;
+    }
+
+    function analyzeCards(cards, phases) {
+      const now = new Date();
+      const byPhase = phases.map(p => ({ name: p.name, count: p.cards_count }));
+
+      const weeks = {};
+      cards.forEach(c => {
+        const d = new Date(c.createdAt);
+        const week = `S${Math.ceil((d - new Date(d.getFullYear(), 0, 1)) / 604800000)}`;
+        weeks[week] = (weeks[week] || 0) + 1;
+      });
+      const trend = Object.entries(weeks).sort(([a],[b]) => a.localeCompare(b))
+        .slice(-8).map(([name, value]) => ({ name, value }));
+
+      const avgResolution = cards.length > 0
+        ? (cards.reduce((s, c) => s + Math.abs((new Date(c.updated_at) - new Date(c.createdAt)) / 86400000), 0) / cards.length).toFixed(1)
+        : 0;
+
+      const overdue = cards.filter(c => c.due_date && new Date(c.due_date) < now).length;
+      const lastPhase = phases[phases.length - 1]?.name || "";
+      const closed = cards.filter(c => c.current_phase?.name === lastPhase).length;
+      const open = cards.length - closed;
+
+      const statusDist = [
+        { name: "Abertos", value: open },
+        { name: "Concluídos", value: closed },
+        { name: "Vencidos", value: overdue },
+      ].filter(x => x.value > 0);
+
+      const typeMap = {};
+      cards.forEach(c => {
+        const f = c.fields?.find(f => /tipo|categoria|class|type/i.test(f.field?.label || ""));
+        const val = f?.value || "Não classificado";
+        typeMap[val] = (typeMap[val] || 0) + 1;
+      });
+      const byType = Object.entries(typeMap).sort(([,a],[,b]) => b-a).slice(0,6)
+        .map(([name, value]) => ({ name, value }));
+
+      return { byPhase, trend, avgResolution, overdue, open, closed, statusDist, byType, total: cards.length };
+    }
+
+    const CustomTooltip = ({ active, payload, label }) => {
+      if (!active || !payload?.length) return null;
+      return (
+        <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 8, padding: "10px 14px", fontSize: 13 }}>
+          <div style={{ color: T.subtext, marginBottom: 4 }}>{label}</div>
+          {payload.map((p, i) => <div key={i} style={{ color: p.color || T.text }}>{p.name}: <strong>{p.value}</strong></div>)}
+        </div>
+      );
+    };
+
+    function KPI({ label, value, sub, color = T.accent }) {
+      return (
+        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, padding: "20px 24px" }}>
+          <div style={{ color: T.muted, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>{label}</div>
+          <div style={{ color, fontSize: 36, fontWeight: 700, lineHeight: 1.1 }}>{value}</div>
+          {sub && <div style={{ color: T.subtext, fontSize: 12, marginTop: 4 }}>{sub}</div>}
+        </div>
+      );
+    }
+
+    function SectionTitle({ children }) {
+      return <h2 style={{ color: T.subtext, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em", margin: "28px 0 12px", borderBottom: `1px solid ${T.border}`, paddingBottom: 8 }}>{children}</h2>;
+    }
+
+    function SetupScreen({ onConnect }) {
+      const [token, setToken] = useState("");
+      const [pipeId, setPipeId] = useState("");
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState("");
+
+      async function handleConnect() {
+        if (!token.trim() || !pipeId.trim()) { setError("Preencha o token e o ID do pipe."); return; }
+        setLoading(true); setError("");
+        try {
+          const data = await gqlFetch(token.trim(), `{ pipe(id: ${pipeId.trim()}) { name phases { id name cards_count } cards_count } }`);
+          if (!data.pipe) throw new Error("Pipe não encontrado.");
+          onConnect(token.trim(), pipeId.trim(), data.pipe);
+        } catch(e) { setError(e.message || "Erro ao conectar."); }
+        finally { setLoading(false); }
+      }
+
+      const inp = { width: "100%", background: T.card, border: `1px solid ${T.border}`, borderRadius: 8, padding: "12px 14px", color: T.text, fontSize: 14, outline: "none", fontFamily: "monospace" };
+
+      return (
+        <div style={{ minHeight: "100vh", background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16, padding: "40px 36px", width: "100%", maxWidth: 460 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 32 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 8, background: T.accent, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 800, fontSize: 18 }}>S</div>
+              <div>
+                <div style={{ color: T.text, fontWeight: 700, fontSize: 16 }}>Sinistros Dashboard</div>
+                <div style={{ color: T.muted, fontSize: 12 }}>Conectado ao Pipefy</div>
+              </div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div>
+                <label style={{ color: T.subtext, fontSize: 12, display: "block", marginBottom: 6 }}>Personal Access Token</label>
+                <input type="password" placeholder="eyJhbGciOi..." value={token} onChange={e => setToken(e.target.value)} style={inp} />
+                <div style={{ color: T.muted, fontSize: 11, marginTop: 5 }}>Gere em app.pipefy.com/tokens</div>
+              </div>
+              <div>
+                <label style={{ color: T.subtext, fontSize: 12, display: "block", marginBottom: 6 }}>ID do Pipe de Sinistros</label>
+                <input type="text" placeholder="302345678" value={pipeId} onChange={e => setPipeId(e.target.value)} style={inp} />
+                <div style={{ color: T.muted, fontSize: 11, marginTop: 5 }}>URL do pipe: pipefy.com/pipes/<strong>ID</strong></div>
+              </div>
+              {error && <div style={{ background: "#3B1A1A", border: `1px solid ${T.danger}`, borderRadius: 8, padding: "10px 14px", color: T.danger, fontSize: 13 }}>{error}</div>}
+              <button onClick={handleConnect} disabled={loading} style={{ background: loading ? T.border : T.accent, color: "#fff", border: "none", borderRadius: 8, padding: 14, fontSize: 15, fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", marginTop: 4 }}>
+                {loading ? "Conectando…" : "Conectar e abrir dashboard →"}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function Dashboard({ token, pipeId, pipeInfo, onDisconnect }) {
+      const [cards, setCards] = useState([]);
+      const [metrics, setMetrics] = useState(null);
+      const [loading, setLoading] = useState(true);
+      const [lastRefresh, setLastRefresh] = useState(null);
+      const [error, setError] = useState("");
+
+      const load = useCallback(async () => {
+        setLoading(true); setError("");
+        try {
+          const allCards = await fetchAllCards(token, pipeId);
+          setCards(allCards);
+          setMetrics(analyzeCards(allCards, pipeInfo.phases));
+          setLastRefresh(new Date());
+        } catch(e) { setError(e.message); }
+        finally { setLoading(false); }
+      }, [token, pipeId, pipeInfo]);
+
+      useEffect(() => { load(); const i = setInterval(load, 60000); return () => clearInterval(i); }, [load]);
+
+      if (loading && !metrics) return (
+        <div style={{ minHeight: "100vh", background: T.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ textAlign: "center", color: T.subtext }}>
+            <div style={{ fontSize: 40, marginBottom: 12, animation: "spin 1s linear infinite" }}>⟳</div>
+            <div>Carregando sinistros…</div>
+          </div>
+        </div>
+      );
+
+      return (
+        <div style={{ minHeight: "100vh", background: T.bg, color: T.text }}>
+          <div style={{ borderBottom: `1px solid ${T.border}`, padding: "16px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", background: T.surface }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ width: 30, height: 30, borderRadius: 6, background: T.accent, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, color: "#fff" }}>S</div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 15 }}>{pipeInfo.name}</div>
+                <div style={{ color: T.muted, fontSize: 11 }}>{lastRefresh ? `Atualizado às ${lastRefresh.toLocaleTimeString("pt-BR")} · auto-refresh 60s` : "Carregando…"}</div>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={load} disabled={loading} style={{ background: "transparent", border: `1px solid ${T.border}`, color: T.subtext, borderRadius: 7, padding: "7px 14px", fontSize: 13, cursor: "pointer" }}>{loading ? "Atualizando…" : "↻ Atualizar"}</button>
+              <button onClick={onDisconnect} style={{ background: "transparent", border: `1px solid ${T.border}`, color: T.muted, borderRadius: 7, padding: "7px 14px", fontSize: 13, cursor: "pointer" }}>Desconectar</button>
+            </div>
+          </div>
+
+          {error && <div style={{ margin: "16px 32px", background: "#3B1A1A", border: `1px solid ${T.danger}`, borderRadius: 8, padding: "10px 14px", color: T.danger, fontSize: 13 }}>{error}</div>}
+
+          <div style={{ padding: "24px 32px", maxWidth: 1200 }}>
+            {metrics && <>
+              <SectionTitle>Visão Geral</SectionTitle>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 14 }}>
+                <KPI label="Total" value={metrics.total} sub="sinistros no pipe" color={T.accent} />
+                <KPI label="Em Aberto" value={metrics.open} sub="não finalizados" color={T.warn} />
+                <KPI label="Concluídos" value={metrics.closed} sub="última fase" color={T.success} />
+                <KPI label="Vencidos" value={metrics.overdue} sub="prazo expirado" color={T.danger} />
+                <KPI label="Tempo Médio" value={`${metrics.avgResolution}d`} sub="dias por sinistro" color="#A78BFA" />
+              </div>
+
+              <SectionTitle>Volume por Fase & Tendência</SectionTitle>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, padding: 20 }}>
+                  <div style={{ color: T.subtext, fontSize: 12, marginBottom: 14 }}>Cards por fase</div>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart data={metrics.byPhase} barSize={28}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false} />
+                      <XAxis dataKey="name" tick={{ fill: T.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fill: T.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Bar dataKey="count" fill={T.accent} radius={[4,4,0,0]} name="Sinistros" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, padding: 20 }}>
+                  <div style={{ color: T.subtext, fontSize: 12, marginBottom: 14 }}>Abertura semanal</div>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <LineChart data={metrics.trend}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false} />
+                      <XAxis dataKey="name" tick={{ fill: T.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fill: T.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Line type="monotone" dataKey="value" stroke={T.success} strokeWidth={2.5} dot={{ fill: T.success, r: 3 }} name="Abertos" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <SectionTitle>Distribuição</SectionTitle>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 16 }}>
+                <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, padding: 20 }}>
+                  <div style={{ color: T.subtext, fontSize: 12, marginBottom: 14 }}>Status geral</div>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <PieChart>
+                      <Pie data={metrics.statusDist} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={75} innerRadius={40}>
+                        {metrics.statusDist.map((_, i) => <Cell key={i} fill={COLORS[i]} />)}
+                      </Pie>
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend iconType="circle" iconSize={8} formatter={v => <span style={{ color: T.subtext, fontSize: 12 }}>{v}</span>} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, padding: 20 }}>
+                  <div style={{ color: T.subtext, fontSize: 12, marginBottom: 14 }}>Por tipo / categoria</div>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={metrics.byType} layout="vertical" barSize={18}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={T.border} horizontal={false} />
+                      <XAxis type="number" tick={{ fill: T.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <YAxis type="category" dataKey="name" width={130} tick={{ fill: T.muted, fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Bar dataKey="value" radius={[0,4,4,0]} name="Sinistros">
+                        {metrics.byType.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <SectionTitle>Sinistros Recentes</SectionTitle>
+              <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: 12, overflow: "hidden" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ borderBottom: `1px solid ${T.border}` }}>
+                      {["Título","Fase","Abertura","Prazo","Status"].map(h => (
+                        <th key={h} style={{ textAlign: "left", padding: "12px 16px", color: T.muted, fontWeight: 600, fontSize: 11, textTransform: "uppercase" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cards.slice(0, 10).map((c, i) => {
+                      const isOverdue = c.due_date && new Date(c.due_date) < new Date();
+                      return (
+                        <tr key={c.id} style={{ borderBottom: i < 9 ? `1px solid ${T.border}` : "none" }}>
+                          <td style={{ padding: "11px 16px", color: T.text }}>{c.title || "—"}</td>
+                          <td style={{ padding: "11px 16px" }}>
+                            <span style={{ background: T.border, borderRadius: 4, padding: "2px 8px", color: T.subtext, fontSize: 11 }}>{c.current_phase?.name || "—"}</span>
+                          </td>
+                          <td style={{ padding: "11px 16px", color: T.subtext }}>{c.createdAt ? new Date(c.createdAt).toLocaleDateString("pt-BR") : "—"}</td>
+                          <td style={{ padding: "11px 16px", color: isOverdue ? T.danger : T.subtext }}>{c.due_date ? new Date(c.due_date).toLocaleDateString("pt-BR") : "—"}</td>
+                          <td style={{ padding: "11px 16px" }}>{isOverdue ? <span style={{ color: T.danger, fontWeight: 600 }}>● Vencido</span> : <span style={{ color: T.success }}>✓ OK</span>}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div style={{ color: T.muted, fontSize: 12, marginTop: 8 }}>Exibindo 10 de {cards.length} sinistros · atualização automática a cada 60s</div>
+            </>}
+          </div>
+        </div>
+      );
+    }
+
+    function App() {
+      const [session, setSession] = useState(null);
+      if (!session) return <SetupScreen onConnect={(t, p, i) => setSession({ token: t, pipeId: p, pipeInfo: i })} />;
+      return <Dashboard token={session.token} pipeId={session.pipeId} pipeInfo={session.pipeInfo} onDisconnect={() => setSession(null)} />;
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
